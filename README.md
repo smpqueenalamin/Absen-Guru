@@ -88,12 +88,3 @@ window.API_BASE_URL = 'https://yourdomain.com/api';
 - Import `database/mariadb_schema.sql`
 
 Setelah setup selesai, website akan berfungsi penuh di shared hosting dengan database MariaDB/MySQL.
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
