@@ -18,10 +18,10 @@ interface NavbarProps {
 }
 
 export const Navbar = ({ userRole, userName, userAvatar }: NavbarProps) => {
-  const { logout } = useAuth();
+  const { signOut } = useAuth();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut();
   };
   return (
     <header className="bg-card border-b border-border shadow-soft sticky top-0 z-50">
