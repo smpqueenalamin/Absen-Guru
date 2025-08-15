@@ -1,4 +1,5 @@
 # Absensi Guru Sekolah
+Absensi Guru berbasis jadwal pelajaran
 
 ## How can I edit this code?
 
