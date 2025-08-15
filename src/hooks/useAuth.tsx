@@ -1,6 +1,12 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { User, Session } from "@supabase/supabase-js";
+import { apiClient } from "@/lib/api";
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+}
 
 interface Profile {
   id: string;
@@ -13,7 +19,7 @@ interface Profile {
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
-  session: Session | null;
+  session: { access_token: string } | null;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signUp: (email: string, password: string, name: string, role?: "admin" | "teacher") => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
@@ -37,75 +43,53 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<{ access_token: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (error) throw error;
-      setProfile({
-        ...data,
-        role: data.role as "admin" | "teacher"
-      });
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      setProfile(null);
-    }
-  };
-
   useEffect(() => {
-    // Check for existing session first
+    // Check for existing session
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        await fetchProfile(session.user.id);
+      try {
+        const { data, error } = await apiClient.getCurrentUser();
+        
+        if (data?.user && !error) {
+          setUser(data.user);
+          setProfile({
+            id: data.user.id,
+            name: data.user.name,
+            email: data.user.email,
+            role: data.user.role,
+          });
+          setSession({ access_token: sessionStorage.getItem('auth_token') || '' });
+        }
+      } catch (error) {
+        console.error('Error checking session:', error);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     getInitialSession();
-
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Fetch profile data when user signs in
-        if (session?.user) {
-          await fetchProfile(session.user.id);
-        } else {
-          setProfile(null);
-        }
-        
-        if (!session) {
-          setIsLoading(false);
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data, error } = await apiClient.login(email, password);
 
       if (error) {
-        return { error: error.message };
+        return { error };
+      }
+
+      if (data?.user) {
+        setUser(data.user);
+        setProfile({
+          id: data.user.id,
+          name: data.user.name,
+          email: data.user.email,
+          role: data.user.role,
+        });
+        setSession(data.session);
       }
 
       return {};
@@ -119,22 +103,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const signUp = async (email: string, password: string, name: string, role: "admin" | "teacher" = "teacher") => {
     try {
       setIsLoading(true);
-      const redirectUrl = `${window.location.origin}/`;
       
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            name,
-            role
-          }
-        }
-      });
+      const { data, error } = await apiClient.register(email, password, name, role);
 
       if (error) {
-        return { error: error.message };
+        return { error };
+      }
+
+      if (data?.user) {
+        setUser(data.user);
+        setProfile({
+          id: data.user.id,
+          name: data.user.name,
+          email: data.user.email,
+          role: data.user.role,
+        });
+        setSession(data.session);
       }
 
       return {};
@@ -148,7 +132,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const signOut = async () => {
     try {
       setIsLoading(true);
-      await supabase.auth.signOut();
+      await apiClient.logout();
       setUser(null);
       setProfile(null);
       setSession(null);

@@ -1,19 +1,20 @@
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { 
-  LayoutDashboard, 
-  Users, 
-  Calendar, 
-  MapPin, 
-  Briefcase, 
-  ClipboardCheck,
-  FileText,
-  Settings,
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Home,
+  Users,
+  Calendar,
+  MapPin,
+  Briefcase,
   GraduationCap,
-  Camera,
-  IdCard
+  ClipboardList,
+  BarChart3,
+  Settings,
+  User,
+  History,
+  CreditCard,
 } from "lucide-react";
-import { useState } from "react";
 
 interface SidebarProps {
   userRole: "admin" | "teacher";
@@ -21,64 +22,74 @@ interface SidebarProps {
   onItemClick: (item: string) => void;
 }
 
-const adminMenuItems = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "teachers", label: "Data Guru", icon: Users },
-  { id: "schedules", label: "Jadwal", icon: Calendar },
-  { id: "positions", label: "Jabatan", icon: Briefcase },
-  { id: "locations", label: "Lokasi", icon: MapPin },
-  { id: "years", label: "Tahun Ajaran", icon: GraduationCap },
-  { id: "attendance", label: "Data Absensi", icon: ClipboardCheck },
-  { id: "reports", label: "Laporan", icon: FileText },
-  { id: "settings", label: "Pengaturan", icon: Settings },
-];
+export function Sidebar({ userRole, activeItem, onItemClick }: SidebarProps) {
+  const adminMenuItems = [
+    { id: "dashboard", label: "Dashboard", icon: Home },
+    { id: "teachers", label: "Data Guru", icon: Users, badge: "74" },
+    { id: "schedules", label: "Jadwal", icon: Calendar, badge: "156" },
+    { id: "positions", label: "Jabatan", icon: Briefcase, badge: "8" },
+    { id: "locations", label: "Lokasi", icon: MapPin, badge: "5" },
+    { id: "years", label: "Tahun Ajaran", icon: GraduationCap },
+    { id: "attendance", label: "Data Absensi", icon: ClipboardList },
+    { id: "reports", label: "Laporan", icon: BarChart3 },
+    { id: "settings", label: "Pengaturan", icon: Settings },
+  ];
 
-const teacherMenuItems = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "attendance", label: "Absensi", icon: Camera },
-  { id: "history", label: "Riwayat Absensi", icon: ClipboardCheck },
-  { id: "profile", label: "Profil", icon: Users },
-  { id: "idcard", label: "ID Card", icon: IdCard },
-];
+  const teacherMenuItems = [
+    { id: "dashboard", label: "Dashboard", icon: Home },
+    { id: "profile", label: "Profil", icon: User },
+    { id: "history", label: "Riwayat Absensi", icon: History },
+    { id: "idcard", label: "ID Card", icon: CreditCard },
+  ];
 
-export const Sidebar = ({ userRole, activeItem, onItemClick }: SidebarProps) => {
   const menuItems = userRole === "admin" ? adminMenuItems : teacherMenuItems;
-  
+
   return (
-    <aside className="w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
-      <div className="p-6">
-        <div className="flex items-center space-x-2 mb-8">
-          <div className="w-10 h-10 bg-sidebar-primary rounded-lg flex items-center justify-center">
-            <span className="text-sidebar-primary-foreground font-bold">SA</span>
-          </div>
-          <div>
-            <h2 className="font-semibold">Sistem Absensi</h2>
-            <p className="text-xs text-sidebar-foreground/70 capitalize">{userRole}</p>
+    <aside className="w-64 border-r bg-card/50 backdrop-blur">
+      <div className="flex h-full flex-col">
+        <div className="p-6">
+          <div className="flex items-center space-x-2">
+            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+              <span className="text-sm font-bold text-primary-foreground">SA</span>
+            </div>
+            <span className="text-lg font-semibold">Menu</span>
           </div>
         </div>
-        
-        <nav className="space-y-2">
+
+        <nav className="flex-1 space-y-1 px-3">
           {menuItems.map((item) => {
             const Icon = item.icon;
+            const isActive = activeItem === item.id;
+            const badge = 'badge' in item ? item.badge as string : undefined;
+
             return (
               <Button
                 key={item.id}
-                variant={activeItem === item.id ? "secondary" : "ghost"}
+                variant={isActive ? "default" : "ghost"}
                 className={cn(
-                  "w-full justify-start text-left",
-                  activeItem === item.id 
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground" 
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  "w-full justify-start",
+                  isActive && "bg-primary text-primary-foreground"
                 )}
                 onClick={() => onItemClick(item.id)}
               >
-                <Icon className="mr-2 h-4 w-4" />
-                {item.label}
+                <Icon className="mr-3 h-4 w-4" />
+                <span className="flex-1 text-left">{item.label}</span>
+                {badge && (
+                  <Badge variant={isActive ? "secondary" : "outline"} className="ml-auto">
+                    {badge}
+                  </Badge>
+                )}
               </Button>
             );
           })}
         </nav>
+
+        <div className="border-t p-3 text-center">
+          <p className="text-xs text-muted-foreground">
+            Sistem Absensi v1.0
+          </p>
+        </div>
       </div>
     </aside>
   );
-};
+}

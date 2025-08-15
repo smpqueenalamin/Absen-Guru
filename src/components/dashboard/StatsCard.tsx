@@ -1,64 +1,49 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { LucideIcon } from "lucide-react";
 
 interface StatsCardProps {
   title: string;
-  value: number;
+  value: number | string;
   icon: LucideIcon;
-  description: string;
-  moreInfoTo: string;
-  variant?: "default" | "success" | "warning" | "info";
+  description?: string;
+  variant?: "default" | "success" | "warning" | "destructive" | "info";
+  moreInfoTo?: string;
 }
 
-export const StatsCard = ({ 
-  title, 
-  value, 
-  icon: Icon, 
-  description, 
-  moreInfoTo,
-  variant = "default" 
-}: StatsCardProps) => {
-  const getVariantStyles = () => {
-    switch (variant) {
-      case "success":
-        return "bg-gradient-success text-white";
-      case "warning":
-        return "bg-yellow-500 text-white";
-      case "info":
-        return "bg-blue-500 text-white";
-      default:
-        return "bg-gradient-primary text-white";
-    }
+export function StatsCard({
+  title,
+  value,
+  icon: Icon,
+  description,
+  variant = "default",
+}: StatsCardProps) {
+  const variantClasses = {
+    default: "border-l-4 border-l-primary",
+    success: "border-l-4 border-l-green-500",
+    warning: "border-l-4 border-l-yellow-500",
+    destructive: "border-l-4 border-l-red-500",
+    info: "border-l-4 border-l-blue-500",
   };
 
   return (
-    <Card className="group hover:shadow-medium transition-smooth">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+    <Card className={`${variantClasses[variant]} transition-all hover:shadow-md`}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
+          {title}
+        </CardTitle>
+        <Icon className="h-4 w-4" />
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-2xl font-bold">{value.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground mt-1">{description}</p>
-          </div>
-          <div className={`p-3 rounded-lg ${getVariantStyles()} group-hover:scale-110 transition-smooth`}>
-            <Icon className="h-6 w-6" />
-          </div>
+        <div className="text-2xl font-bold mb-1">
+          {typeof value === 'number' ? value.toLocaleString() : value}
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="w-full mt-4 group-hover:bg-primary group-hover:text-primary-foreground"
-          onClick={() => {
-            // In a real app, navigate to moreInfoTo route
-            console.log(`Navigate to ${moreInfoTo}`);
-          }}
-        >
-          More Info
-        </Button>
+        
+        {description && (
+          <p className="text-xs text-muted-foreground">
+            {description}
+          </p>
+        )}
       </CardContent>
     </Card>
   );
-};
+}

@@ -1,271 +1,132 @@
-import { useState, useRef, useCallback } from "react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Camera, MapPin, Clock, CheckCircle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-
-interface LocationData {
-  latitude: number;
-  longitude: number;
-  accuracy: number;
-}
+import { Camera, MapPin, Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
+import { apiClient } from "@/lib/api";
 
 interface AttendanceCaptureProps {
-  attendanceType: "kehadiran" | "izin" | "sakit" | "dinas";
-  requiredLocation?: LocationData;
+  attendanceType: "kehadiran" | "pulang";
+  requiredLocation?: {
+    latitude: number;
+    longitude: number;
+    accuracy: number;
+  };
   requiresCamera?: boolean;
   requiresGPS?: boolean;
 }
 
-export const AttendanceCapture = ({ 
-  attendanceType, 
+export function AttendanceCapture({
+  attendanceType = "kehadiran",
   requiredLocation,
-  requiresCamera = true,
-  requiresGPS = true 
-}: AttendanceCaptureProps) => {
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [isLocationValid, setIsLocationValid] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { toast } = useToast();
+  requiresCamera = false,
+  requiresGPS = false,
+}: AttendanceCaptureProps) {
+  const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [notes, setNotes] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const getCurrentLocation = useCallback(() => {
+  useEffect(() => {
+    if (requiresGPS) {
+      getCurrentLocation();
+    }
+  }, [requiresGPS]);
+
+  const getCurrentLocation = () => {
     if (!navigator.geolocation) {
-      toast({
-        title: "GPS tidak didukung",
-        description: "Browser Anda tidak mendukung geolocation",
-        variant: "destructive",
-      });
+      setError("Geolocation tidak didukung oleh browser ini");
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const location = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-        };
-        setCurrentLocation(location);
-        
-        // Check if location is within required range (100m radius)
-        if (requiredLocation) {
-          const distance = calculateDistance(
-            location.latitude,
-            location.longitude,
-            requiredLocation.latitude,
-            requiredLocation.longitude
-          );
-          setIsLocationValid(distance <= 100);
-        } else {
-          setIsLocationValid(true);
-        }
+        setLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+        setError("");
       },
       (error) => {
-        toast({
-          title: "Error GPS",
-          description: "Tidak dapat mengakses lokasi Anda",
-          variant: "destructive",
-        });
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+        setError("Gagal mendapatkan lokasi: " + error.message);
+      }
     );
-  }, [requiredLocation, toast]);
-
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371e3; // Earth's radius in meters
-    const φ1 = lat1 * Math.PI/180;
-    const φ2 = lat2 * Math.PI/180;
-    const Δφ = (lat2-lat1) * Math.PI/180;
-    const Δλ = (lon2-lon1) * Math.PI/180;
-
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-    return R * c;
   };
 
-  const startCamera = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
     try {
-      setIsCapturing(true);
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user' } 
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+      if (attendanceType === "kehadiran") {
+        const { error } = await apiClient.checkIn(undefined, undefined, notes);
+        if (error) {
+          setError(error);
+          return;
+        }
+        toast.success("Check-in berhasil!");
+      } else {
+        const { error } = await apiClient.checkOut(undefined, notes);
+        if (error) {
+          setError(error);
+          return;
+        }
+        toast.success("Check-out berhasil!");
       }
+
+      setNotes("");
+      
     } catch (error) {
-      toast({
-        title: "Error Kamera",
-        description: "Tidak dapat mengakses kamera",
-        variant: "destructive",
-      });
-      setIsCapturing(false);
-    }
-  };
-
-  const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const video = videoRef.current;
-      const context = canvas.getContext('2d');
-      
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      
-      if (context) {
-        context.drawImage(video, 0, 0);
-        const imageData = canvas.toDataURL('image/jpeg');
-        setCapturedImage(imageData);
-        
-        // Stop camera
-        const stream = video.srcObject as MediaStream;
-        stream?.getTracks().forEach(track => track.stop());
-        setIsCapturing(false);
-      }
-    }
-  };
-
-  const submitAttendance = () => {
-    // Here you would submit the attendance data
-    toast({
-      title: "Absensi Berhasil",
-      description: `Absensi ${attendanceType} telah dicatat`,
-    });
-  };
-
-  const getAttendanceTypeLabel = () => {
-    switch (attendanceType) {
-      case "kehadiran": return "Kehadiran";
-      case "izin": return "Izin";
-      case "sakit": return "Sakit";
-      case "dinas": return "Perjalanan Dinas";
-    }
-  };
-
-  const getAttendanceTypeColor = () => {
-    switch (attendanceType) {
-      case "kehadiran": return "status-present";
-      case "izin": return "status-permit";
-      case "sakit": return "status-sick";
-      case "dinas": return "bg-blue-500 text-white";
+      setError("Terjadi kesalahan sistem");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <Card className="max-w-2xl mx-auto">
+    <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Absensi {getAttendanceTypeLabel()}</span>
-          <Badge className={getAttendanceTypeColor()}>
-            {getAttendanceTypeLabel()}
-          </Badge>
+        <CardTitle className="flex items-center gap-2">
+          <Clock className="h-5 w-5" />
+          {attendanceType === "kehadiran" ? "Absen Masuk" : "Absen Pulang"}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Time Display */}
-        <div className="flex items-center space-x-2 text-lg font-semibold">
-          <Clock className="h-5 w-5 text-primary" />
-          <span>{new Date().toLocaleString('id-ID')}</span>
-        </div>
-
-        {/* GPS Section */}
-        {requiresGPS && (
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="font-medium">Lokasi GPS</span>
-              <Button variant="outline" size="sm" onClick={getCurrentLocation}>
-                <MapPin className="h-4 w-4 mr-2" />
-                Dapatkan Lokasi
-              </Button>
-            </div>
-            {currentLocation && (
-              <div className="p-3 bg-muted rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm">
-                    <p>Lat: {currentLocation.latitude.toFixed(6)}</p>
-                    <p>Lng: {currentLocation.longitude.toFixed(6)}</p>
-                    <p>Akurasi: {currentLocation.accuracy.toFixed(0)}m</p>
-                  </div>
-                  {isLocationValid ? (
-                    <Badge className="status-present">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Valid
-                    </Badge>
-                  ) : (
-                    <Badge variant="destructive">
-                      Lokasi Tidak Valid
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            )}
+            <Textarea
+              placeholder="Tambahkan catatan..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+            />
           </div>
-        )}
 
-        {/* Camera Section */}
-        {requiresCamera && (
-          <div className="space-y-3">
-            <span className="font-medium">Foto Absensi</span>
-            {!isCapturing && !capturedImage && (
-              <Button onClick={startCamera} className="w-full">
-                <Camera className="h-4 w-4 mr-2" />
-                Buka Kamera
-              </Button>
-            )}
-            
-            {isCapturing && (
-              <div className="space-y-3">
-                <video 
-                  ref={videoRef} 
-                  autoPlay 
-                  className="w-full rounded-lg border"
-                  style={{ maxHeight: '300px' }}
-                />
-                <Button onClick={capturePhoto} className="w-full">
-                  Ambil Foto
-                </Button>
-              </div>
-            )}
-            
-            {capturedImage && (
-              <div className="space-y-3">
-                <img 
-                  src={capturedImage} 
-                  alt="Captured" 
-                  className="w-full rounded-lg border max-h-60 object-cover"
-                />
-                <Button variant="outline" onClick={() => {
-                  setCapturedImage(null);
-                  startCamera();
-                }}>
-                  Ambil Ulang
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-        {/* Submit Button */}
-        <Button 
-          onClick={submitAttendance} 
-          className="w-full" 
-          size="lg"
-          disabled={
-            (requiresGPS && (!currentLocation || !isLocationValid)) ||
-            (requiresCamera && !capturedImage)
-          }
-        >
-          Submit Absensi
-        </Button>
-
-        <canvas ref={canvasRef} style={{ display: 'none' }} />
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Clock className="mr-2 h-4 w-4 animate-spin" />
+                Memproses...
+              </>
+            ) : (
+              <>
+                <CheckCircle className="mr-2 h-4 w-4" />
+                {attendanceType === "kehadiran" ? "Absen Masuk" : "Absen Pulang"}
+              </>
+            )}
+          </Button>
+        </form>
       </CardContent>
     </Card>
   );
-};
+}

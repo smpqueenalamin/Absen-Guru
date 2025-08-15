@@ -1,62 +1,67 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
-import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-const weeklyData = [
-  { name: "Sen", hadir: 65, telat: 5, izin: 2, sakit: 1 },
-  { name: "Sel", hadir: 68, telat: 3, izin: 1, sakit: 2 },
-  { name: "Rab", hadir: 70, telat: 2, izin: 1, sakit: 1 },
-  { name: "Kam", hadir: 67, telat: 4, izin: 2, sakit: 1 },
-  { name: "Jum", hadir: 69, telat: 3, izin: 1, sakit: 1 },
+const attendanceData = [
+  { name: "Sen", hadir: 65, telat: 8, izin: 2 },
+  { name: "Sel", hadir: 68, telat: 5, izin: 1 },
+  { name: "Rab", hadir: 70, telat: 3, izin: 2 },
+  { name: "Kam", hadir: 67, telat: 6, izin: 1 },
+  { name: "Jum", hadir: 64, telat: 7, izin: 3 },
 ];
 
-const monthlyData = [
-  { name: "Jan", hadir: 1250, telat: 80, izin: 45, sakit: 25 },
-  { name: "Feb", hadir: 1320, telat: 65, izin: 38, sakit: 22 },
-  { name: "Mar", hadir: 1380, telat: 72, izin: 42, sakit: 28 },
-  { name: "Apr", hadir: 1360, telat: 68, izin: 40, sakit: 30 },
-  { name: "Mei", hadir: 1400, telat: 75, izin: 35, sakit: 25 },
-  { name: "Jun", hadir: 1420, telat: 70, izin: 38, sakit: 27 },
-];
-
-export const AttendanceChart = () => {
-  const [period, setPeriod] = useState("weekly");
-  
-  const data = period === "weekly" ? weeklyData : monthlyData;
-  
+export function AttendanceChart() {
   return (
-    <Card className="col-span-2">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Grafik Absensi</CardTitle>
-          <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="weekly">Per Minggu</SelectItem>
-              <SelectItem value="monthly">Per Bulan</SelectItem>
-              <SelectItem value="semester">Per Semester</SelectItem>
-              <SelectItem value="yearly">Per Tahun</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={350}>
-          <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="hadir" fill="hsl(var(--accent))" name="Hadir" />
-            <Bar dataKey="telat" fill="#f59e0b" name="Telat" />
-            <Bar dataKey="izin" fill="#8b5cf6" name="Izin" />
-            <Bar dataKey="sakit" fill="#3b82f6" name="Sakit" />
-          </BarChart>
-        </ResponsiveContainer>
-      </CardContent>
-    </Card>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Absensi Harian</CardTitle>
+          <CardDescription>
+            Data absensi guru minggu ini
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {attendanceData.map((data, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <span className="font-medium">{data.name}</span>
+                <div className="flex space-x-2">
+                  <span className="text-green-600">Hadir: {data.hadir}</span>
+                  <span className="text-yellow-600">Telat: {data.telat}</span>
+                  <span className="text-gray-600">Izin: {data.izin}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Statistik Kehadiran</CardTitle>
+          <CardDescription>
+            Ringkasan absensi hari ini
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex justify-between">
+              <span>Total Guru</span>
+              <span className="font-bold">74</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-green-600">Hadir</span>
+              <span className="font-bold text-green-600">65</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-yellow-600">Telat</span>
+              <span className="font-bold text-yellow-600">6</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-red-600">Tidak Hadir</span>
+              <span className="font-bold text-red-600">3</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
-};
+}

@@ -1,14 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell, Settings, LogOut, User } from "lucide-react";
+import { LogOut, User, GraduationCap } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 interface NavbarProps {
@@ -17,65 +16,64 @@ interface NavbarProps {
   userAvatar?: string;
 }
 
-export const Navbar = ({ userRole, userName, userAvatar }: NavbarProps) => {
+export function Navbar({ userRole, userName, userAvatar }: NavbarProps) {
   const { signOut } = useAuth();
 
-  const handleLogout = async () => {
-    await signOut();
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
   };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
-    <header className="bg-card border-b border-border shadow-soft sticky top-0 z-50">
-      <div className="flex items-center justify-between px-6 py-4">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">SA</span>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold">Sistem Absensi</h1>
-              <p className="text-xs text-muted-foreground">
-                {userRole === "admin" ? "Panel Administrator" : "Portal Guru"}
-              </p>
-            </div>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
+      <div className="flex h-16 items-center justify-between px-6">
+        <div className="flex items-center space-x-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            <GraduationCap className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className="text-lg font-semibold">Sistem Absensi</h1>
+            <p className="text-xs text-muted-foreground">
+              {userRole === "admin" ? "Administrator" : "Guru"}
+            </p>
           </div>
         </div>
 
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon">
-            <Bell className="h-4 w-4" />
-          </Button>
-          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+              <Button variant="ghost" className="relative h-10 w-auto px-3">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={userAvatar} alt={userName} />
-                  <AvatarFallback>
-                    {userName.split(' ').map(n => n[0]).join('').toUpperCase()}
-                  </AvatarFallback>
+                  <AvatarFallback>{getInitials(userName)}</AvatarFallback>
                 </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{userName}</p>
-                  <p className="text-xs leading-none text-muted-foreground capitalize">
-                    {userRole}
+                <div className="ml-3 text-left">
+                  <p className="text-sm font-medium">{userName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {userRole === "admin" ? "Administrator" : "Guru"}
                   </p>
                 </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end">
               <DropdownMenuItem>
                 <User className="mr-2 h-4 w-4" />
                 <span>Profil</span>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Pengaturan</span>
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
+              <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Keluar</span>
               </DropdownMenuItem>
@@ -85,4 +83,4 @@ export const Navbar = ({ userRole, userName, userAvatar }: NavbarProps) => {
       </div>
     </header>
   );
-};
+}
