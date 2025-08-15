@@ -14,7 +14,343 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      academic_years: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          is_active: boolean | null
+          start_date: string
+          updated_at: string
+          year: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          is_active?: boolean | null
+          start_date: string
+          updated_at?: string
+          year: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          is_active?: boolean | null
+          start_date?: string
+          updated_at?: string
+          year?: string
+        }
+        Relationships: []
+      }
+      attendance: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          latitude: number | null
+          location_id: string | null
+          longitude: number | null
+          notes: string | null
+          photo_url: string | null
+          status: string
+          teacher_id: string
+          time: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          latitude?: number | null
+          location_id?: string | null
+          longitude?: number | null
+          notes?: string | null
+          photo_url?: string | null
+          status: string
+          teacher_id: string
+          time: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          latitude?: number | null
+          location_id?: string | null
+          longitude?: number | null
+          notes?: string | null
+          photo_url?: string | null
+          status?: string
+          teacher_id?: string
+          time?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      locations: {
+        Row: {
+          address: string | null
+          created_at: string
+          description: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          name: string
+          radius: number | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          radius?: number | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          radius?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      positions: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          address: string | null
+          birth_date: string | null
+          birth_place: string | null
+          created_at: string
+          email: string | null
+          employee_code: string | null
+          id: string
+          location_id: string | null
+          name: string
+          phone: string | null
+          photo_url: string | null
+          position_id: string | null
+          role: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          birth_date?: string | null
+          birth_place?: string | null
+          created_at?: string
+          email?: string | null
+          employee_code?: string | null
+          id?: string
+          location_id?: string | null
+          name: string
+          phone?: string | null
+          photo_url?: string | null
+          position_id?: string | null
+          role?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          birth_date?: string | null
+          birth_place?: string | null
+          created_at?: string
+          email?: string | null
+          employee_code?: string | null
+          id?: string
+          location_id?: string | null
+          name?: string
+          phone?: string | null
+          photo_url?: string | null
+          position_id?: string | null
+          role?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_profiles_location"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_profiles_position"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schedules: {
+        Row: {
+          academic_year_id: string | null
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          location_id: string | null
+          start_time: string
+          subject: string | null
+          teacher_id: string
+          updated_at: string
+        }
+        Insert: {
+          academic_year_id?: string | null
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          location_id?: string | null
+          start_time: string
+          subject?: string | null
+          teacher_id: string
+          updated_at?: string
+        }
+        Update: {
+          academic_year_id?: string | null
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          location_id?: string | null
+          start_time?: string
+          subject?: string | null
+          teacher_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedules_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedules_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedules_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      settings: {
+        Row: {
+          attendance_end_time: string | null
+          attendance_start_time: string | null
+          created_at: string
+          default_latitude: number | null
+          default_longitude: number | null
+          default_radius: number | null
+          id: string
+          late_tolerance_minutes: number | null
+          logo_url: string | null
+          school_address: string | null
+          school_email: string | null
+          school_name: string | null
+          school_phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          attendance_end_time?: string | null
+          attendance_start_time?: string | null
+          created_at?: string
+          default_latitude?: number | null
+          default_longitude?: number | null
+          default_radius?: number | null
+          id?: string
+          late_tolerance_minutes?: number | null
+          logo_url?: string | null
+          school_address?: string | null
+          school_email?: string | null
+          school_name?: string | null
+          school_phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attendance_end_time?: string | null
+          attendance_start_time?: string | null
+          created_at?: string
+          default_latitude?: number | null
+          default_longitude?: number | null
+          default_radius?: number | null
+          id?: string
+          late_tolerance_minutes?: number | null
+          logo_url?: string | null
+          school_address?: string | null
+          school_email?: string | null
+          school_name?: string | null
+          school_phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
