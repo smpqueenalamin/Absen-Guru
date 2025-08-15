@@ -12,6 +12,8 @@ import { AcademicYearsManagement } from "@/components/admin/AcademicYearsManagem
 import { AttendanceDataManagement } from "@/components/admin/AttendanceDataManagement";
 import { ReportsManagement } from "@/components/admin/ReportsManagement";
 import { SettingsManagement } from "@/components/admin/SettingsManagement";
+import { TeacherProfile } from "@/components/teacher/TeacherProfile";
+import { AttendanceHistory } from "@/components/teacher/AttendanceHistory";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -218,25 +220,38 @@ const Index = () => {
       }
     }
 
-    // Teacher menu content (placeholder for now)
-    return (
-      <div className="p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {activeMenuItem === "profile" && "Profil"}
-              {activeMenuItem === "history" && "Riwayat Absensi"}
-              {activeMenuItem === "idcard" && "ID Card"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Konten untuk menu {activeMenuItem} akan dikembangkan di sini.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    // Teacher menu content
+    switch (activeMenuItem) {
+      case "profile":
+        return (
+          <div className="p-6">
+            <TeacherProfile />
+          </div>
+        );
+      case "history":
+        return (
+          <div className="p-6">
+            <AttendanceHistory />
+          </div>
+        );
+      case "idcard":
+        return (
+          <div className="p-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>ID Card</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Fitur ID Card akan dikembangkan di sini.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
