@@ -8,6 +8,9 @@ Absensi Guru berbasis jadwal pelajaran
 ### Build Project
 Jalankan command berikut untuk build production:
 ```bash
+npm install
+```
+```bash
 npm run build
 ```
 
