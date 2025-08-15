@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Bell, Settings, LogOut, User } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface NavbarProps {
   userRole: "admin" | "teacher";
@@ -17,6 +18,11 @@ interface NavbarProps {
 }
 
 export const Navbar = ({ userRole, userName, userAvatar }: NavbarProps) => {
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+  };
   return (
     <header className="bg-card border-b border-border shadow-soft sticky top-0 z-50">
       <div className="flex items-center justify-between px-6 py-4">
@@ -69,7 +75,7 @@ export const Navbar = ({ userRole, userName, userAvatar }: NavbarProps) => {
                 <span>Pengaturan</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Keluar</span>
               </DropdownMenuItem>

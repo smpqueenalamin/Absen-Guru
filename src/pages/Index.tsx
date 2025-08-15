@@ -14,16 +14,38 @@ import { ReportsManagement } from "@/components/admin/ReportsManagement";
 import { SettingsManagement } from "@/components/admin/SettingsManagement";
 import { TeacherProfile } from "@/components/teacher/TeacherProfile";
 import { AttendanceHistory } from "@/components/teacher/AttendanceHistory";
+import { LoginForm } from "@/components/auth/LoginForm";
+import { RoleSwitcher } from "@/components/dashboard/RoleSwitcher";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, Calendar, MapPin, Briefcase, Camera, Clock, CheckCircle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import heroImage from "@/assets/hero-attendance.jpg";
 
 const Index = () => {
-  const [userRole] = useState<"admin" | "teacher">("admin");
+  const { user, isLoading } = useAuth();
   const [activeMenuItem, setActiveMenuItem] = useState("dashboard");
   const [showAttendance, setShowAttendance] = useState(false);
+
+  // Show loading screen
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-primary rounded-full mx-auto mb-4 flex items-center justify-center animate-pulse">
+            <span className="text-white font-bold text-lg">SA</span>
+          </div>
+          <p className="text-muted-foreground">Memuat...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login form if not authenticated
+  if (!user) {
+    return <LoginForm />;
+  }
 
   const renderContent = () => {
     if (showAttendance) {
@@ -66,7 +88,7 @@ const Index = () => {
                   <p className="text-white/90 mb-6">
                     Kelola absensi guru dengan mudah menggunakan teknologi GPS dan kamera
                   </p>
-                  {userRole === "teacher" && (
+                  {user.role === "teacher" && (
                     <Button 
                       variant="secondary" 
                       size="lg"
@@ -83,6 +105,9 @@ const Index = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Role Switcher for Demo */}
+          <RoleSwitcher />
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -165,7 +190,7 @@ const Index = () => {
     }
 
     // Admin menu content
-    if (userRole === "admin") {
+    if (user.role === "admin") {
       switch (activeMenuItem) {
         case "teachers":
           return (
@@ -257,13 +282,13 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar 
-        userRole={userRole}
-        userName="Administrator"
-        userAvatar=""
+        userRole={user.role}
+        userName={user.name}
+        userAvatar={user.avatar}
       />
       <div className="flex">
         <Sidebar 
-          userRole={userRole}
+          userRole={user.role}
           activeItem={activeMenuItem}
           onItemClick={setActiveMenuItem}
         />
