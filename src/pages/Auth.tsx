@@ -22,8 +22,8 @@ export default function Auth() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Redirect if already authenticated
-  if (user) {
+  // Redirect if already authenticated - check both user and loading state
+  if (!isLoading && user) {
     return <Navigate to="/" replace />;
   }
 

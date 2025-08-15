@@ -38,16 +38,25 @@ export const PositionsManagement = () => {
       const { data, error } = await supabase
         .from('positions')
         .select(`
-          *,
-          profiles(count)
+          *
         `);
 
       if (error) throw error;
 
-      const positionsWithCount = data?.map(position => ({
-        ...position,
-        count: position.profiles?.length || 0
-      })) || [];
+      // Get count for each position
+      const positionsWithCount = await Promise.all(
+        (data || []).map(async (position) => {
+          const { count } = await supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true })
+            .eq('position_id', position.id);
+          
+          return {
+            ...position,
+            count: count || 0
+          };
+        })
+      );
 
       setPositions(positionsWithCount);
     } catch (error) {

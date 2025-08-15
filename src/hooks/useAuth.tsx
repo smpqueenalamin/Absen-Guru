@@ -60,35 +60,38 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // Check for existing session first
+    const getInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        await fetchProfile(session.user.id);
+      }
+      setIsLoading(false);
+    };
+
+    getInitialSession();
+
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         // Fetch profile data when user signs in
         if (session?.user) {
-          setTimeout(() => {
-            fetchProfile(session.user.id);
-          }, 0);
+          await fetchProfile(session.user.id);
         } else {
           setProfile(null);
         }
         
-        setIsLoading(false);
+        if (!session) {
+          setIsLoading(false);
+        }
       }
     );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-      setIsLoading(false);
-    });
 
     return () => subscription.unsubscribe();
   }, []);
