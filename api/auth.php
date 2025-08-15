@@ -17,6 +17,18 @@ switch ($method . ':' . $endpoint) {
     case 'GET:me':
         handleGetUser();
         break;
+    case 'GET:':
+        // Test endpoint untuk memastikan API berjalan
+        sendResponse([
+            'message' => 'API Auth berhasil berjalan',
+            'endpoints' => [
+                'POST /api/auth.php?endpoint=login',
+                'POST /api/auth.php?endpoint=register', 
+                'POST /api/auth.php?endpoint=logout',
+                'GET /api/auth.php?endpoint=me'
+            ]
+        ]);
+        break;
     default:
         sendResponse(['error' => 'Endpoint not found'], 404);
 }
