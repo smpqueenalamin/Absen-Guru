@@ -1,46 +1,93 @@
 # Absensi Guru Sekolah
 Absensi Guru berbasis jadwal pelajaran
 
-## How can I edit this code?
+# Setup Guide untuk Shared Hosting
 
-There are several ways of editing your application.
+## 1. Persiapan Files
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone https://github.com/smpqueenalamin/Absen-Guru/
-
-# Step 2: Navigate to the project directory.
-cd Absensi-Guru
-
-# Step 3: Install the necessary dependencies.
-npm install
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+### Build Project
+Jalankan command berikut untuk build production:
+```bash
+npm run build
 ```
 
-**Edit a file directly in GitHub**
+### Upload Files
+Upload semua files dari folder `dist/` ke folder public_html di hosting Anda.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 2. Setup Database
 
-**Use GitHub Codespaces**
+1. Buat database MySQL/MariaDB di cPanel
+2. Import file `database/mariadb_schema.sql` melalui phpMyAdmin
+3. Update konfigurasi database di `api/config.php`:
+   ```php
+   define('DB_HOST', 'localhost'); // Host database Anda
+   define('DB_NAME', 'nama_database'); // Nama database yang dibuat
+   define('DB_USER', 'username_db'); // Username database
+   define('DB_PASS', 'password_db'); // Password database
+   ```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 3. Upload API Files
 
+1. Buat folder `api` di root hosting (sejajar dengan public_html)
+2. Upload semua files dari folder `api/` ke folder tersebut
+3. Pastikan permissions folder api adalah 755
+
+## 4. Konfigurasi .htaccess
+
+File `.htaccess` sudah disertakan untuk:
+- URL rewriting untuk React Router
+- Security headers
+- Compression
+- Caching static assets
+
+## 5. Update Frontend Configuration
+
+Buat file `config.js` di root build untuk konfigurasi API:
+```javascript
+window.API_BASE_URL = 'https://yourdomain.com/api';
+```
+
+## 6. Testing
+
+1. Akses website Anda
+2. Test registrasi user baru
+3. Test login/logout
+4. Test fitur attendance
+
+## 7. Troubleshooting
+
+### Jika API tidak bisa diakses:
+1. Pastikan mod_rewrite enabled
+2. Check file permissions (755 untuk folder, 644 untuk files)
+3. Check error logs di cPanel
+
+### Jika database connection error:
+1. Verify database credentials di config.php
+2. Pastikan database sudah diimport
+3. Check database user permissions
+
+## 8. Security Notes
+
+1. Ubah session configuration di php.ini jika perlu
+2. Enable HTTPS untuk security
+3. Backup database secara regular
+4. Monitor error logs
+
+## Files yang perlu diupload:
+
+### Ke public_html/:
+- Semua files dari folder `dist/` hasil build
+- File `.htaccess`
+
+### Ke folder api/:
+- config.php
+- auth.php  
+- attendance.php
+
+### Ke database:
+- Import `database/mariadb_schema.sql`
+
+Setelah setup selesai, website akan berfungsi penuh di shared hosting dengan database MariaDB/MySQL.
 ## What technologies are used for this project?
 
 This project is built with:
