@@ -72,8 +72,10 @@ window.API_BASE_URL = 'https://yourdomain.com/api';
 
 ## Files yang perlu diupload:
 
+**PENTING:** Folder `src/` TIDAK perlu diupload! Hanya upload hasil build dan API files.
+
 ### Ke public_html/:
-- Semua files dari folder `dist/` hasil build
+- Semua files dari folder `dist/` hasil build (bukan folder src!)
 - File `.htaccess`
 
 ### Ke folder api/:
@@ -83,5 +85,10 @@ window.API_BASE_URL = 'https://yourdomain.com/api';
 
 ### Ke database:
 - Import `database/mariadb_schema.sql`
+
+### Yang TIDAK perlu diupload:
+- Folder `src/` 
+- Folder `node_modules/`
+- File `package.json`, `vite.config.ts`, dll (development files)
 
 Setelah setup selesai, website akan berfungsi penuh di shared hosting dengan database MariaDB/MySQL.
