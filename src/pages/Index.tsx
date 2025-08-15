@@ -4,6 +4,14 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { AttendanceChart } from "@/components/dashboard/AttendanceChart";
 import { AttendanceCapture } from "@/components/attendance/AttendanceCapture";
+import { TeachersManagement } from "@/components/admin/TeachersManagement";
+import { SchedulesManagement } from "@/components/admin/SchedulesManagement";
+import { PositionsManagement } from "@/components/admin/PositionsManagement";
+import { LocationsManagement } from "@/components/admin/LocationsManagement";
+import { AcademicYearsManagement } from "@/components/admin/AcademicYearsManagement";
+import { AttendanceDataManagement } from "@/components/admin/AttendanceDataManagement";
+import { ReportsManagement } from "@/components/admin/ReportsManagement";
+import { SettingsManagement } from "@/components/admin/SettingsManagement";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -154,19 +162,68 @@ const Index = () => {
       );
     }
 
+    // Admin menu content
+    if (userRole === "admin") {
+      switch (activeMenuItem) {
+        case "teachers":
+          return (
+            <div className="p-6">
+              <TeachersManagement />
+            </div>
+          );
+        case "schedules":
+          return (
+            <div className="p-6">
+              <SchedulesManagement />
+            </div>
+          );
+        case "positions":
+          return (
+            <div className="p-6">
+              <PositionsManagement />
+            </div>
+          );
+        case "locations":
+          return (
+            <div className="p-6">
+              <LocationsManagement />
+            </div>
+          );
+        case "years":
+          return (
+            <div className="p-6">
+              <AcademicYearsManagement />
+            </div>
+          );
+        case "attendance":
+          return (
+            <div className="p-6">
+              <AttendanceDataManagement />
+            </div>
+          );
+        case "reports":
+          return (
+            <div className="p-6">
+              <ReportsManagement />
+            </div>
+          );
+        case "settings":
+          return (
+            <div className="p-6">
+              <SettingsManagement />
+            </div>
+          );
+        default:
+          return null;
+      }
+    }
+
+    // Teacher menu content (placeholder for now)
     return (
       <div className="p-6">
         <Card>
           <CardHeader>
             <CardTitle>
-              {activeMenuItem === "teachers" && "Data Guru"}
-              {activeMenuItem === "schedules" && "Jadwal Mengajar"}
-              {activeMenuItem === "positions" && "Data Jabatan"}
-              {activeMenuItem === "locations" && "Data Lokasi"}
-              {activeMenuItem === "years" && "Tahun Ajaran"}
-              {activeMenuItem === "attendance" && "Data Absensi"}
-              {activeMenuItem === "reports" && "Laporan"}
-              {activeMenuItem === "settings" && "Pengaturan"}
               {activeMenuItem === "profile" && "Profil"}
               {activeMenuItem === "history" && "Riwayat Absensi"}
               {activeMenuItem === "idcard" && "ID Card"}
