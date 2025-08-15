@@ -18,10 +18,10 @@ Follow these steps:
 git clone https://github.com/smpqueenalamin/Absen-Guru/
 
 # Step 2: Navigate to the project directory.
-cd <Absensi-Guru>
+cd Absensi-Guru
 
 # Step 3: Install the necessary dependencies.
-npm i
+npm install
 
 # Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
