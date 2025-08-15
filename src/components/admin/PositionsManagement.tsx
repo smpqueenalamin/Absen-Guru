@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,20 +8,151 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash2, Briefcase } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-const mockPositions = [
-  { id: 1, name: "Kepala Sekolah", code: "KS", description: "Memimpin dan mengelola seluruh kegiatan sekolah", count: 1 },
-  { id: 2, name: "Wakil Kepala Sekolah", code: "WKS", description: "Membantu kepala sekolah dalam mengelola sekolah", count: 2 },
-  { id: 3, name: "Guru Kelas", code: "GK", description: "Mengajar di kelas tertentu", count: 12 },
-  { id: 4, name: "Guru Mata Pelajaran", code: "GMP", description: "Mengajar mata pelajaran khusus", count: 8 },
-  { id: 5, name: "Guru Olahraga", code: "GO", description: "Mengajar pendidikan jasmani dan olahraga", count: 2 },
-  { id: 6, name: "Guru BK", code: "BK", description: "Bimbingan dan konseling siswa", count: 1 },
-  { id: 7, name: "Pustakawan", code: "PUS", description: "Mengelola perpustakaan sekolah", count: 1 },
-  { id: 8, name: "Staf TU", code: "TU", description: "Tata usaha dan administrasi", count: 3 },
-];
+interface Position {
+  id: string;
+  name: string;
+  description?: string;
+  count?: number;
+}
 
 export const PositionsManagement = () => {
+  const [positions, setPositions] = useState<Position[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingPosition, setEditingPosition] = useState<Position | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [formData, setFormData] = useState({
+    name: "",
+    description: ""
+  });
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchPositions();
+  }, []);
+
+  const fetchPositions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('positions')
+        .select(`
+          *,
+          profiles(count)
+        `);
+
+      if (error) throw error;
+
+      const positionsWithCount = data?.map(position => ({
+        ...position,
+        count: position.profiles?.length || 0
+      })) || [];
+
+      setPositions(positionsWithCount);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal memuat data jabatan",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.name.trim()) {
+      toast({
+        title: "Error", 
+        description: "Nama jabatan wajib diisi",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      if (editingPosition) {
+        const { error } = await supabase
+          .from('positions')
+          .update({
+            name: formData.name,
+            description: formData.description
+          })
+          .eq('id', editingPosition.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Berhasil",
+          description: "Jabatan berhasil diperbarui"
+        });
+      } else {
+        const { error } = await supabase
+          .from('positions')
+          .insert({
+            name: formData.name,
+            description: formData.description
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Berhasil",
+          description: "Jabatan berhasil ditambahkan"
+        });
+      }
+
+      resetForm();
+      fetchPositions();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal menyimpan data jabatan",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleEdit = (position: Position) => {
+    setEditingPosition(position);
+    setFormData({
+      name: position.name,
+      description: position.description || ""
+    });
+    setIsAddDialogOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Yakin ingin menghapus jabatan ini?")) return;
+
+    try {
+      const { error } = await supabase
+        .from('positions')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Berhasil",
+        description: "Jabatan berhasil dihapus"
+      });
+      fetchPositions();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal menghapus jabatan",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({ name: "", description: "" });
+    setEditingPosition(null);
+    setIsAddDialogOpen(false);
+  };
 
   return (
     <Card>
@@ -31,7 +162,10 @@ export const PositionsManagement = () => {
             <Briefcase className="h-5 w-5 mr-2" />
             Data Jabatan
           </CardTitle>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+            if (!open) resetForm();
+            setIsAddDialogOpen(open);
+          }}>
             <DialogTrigger asChild>
               <Button size="sm">
                 <Plus className="h-4 w-4 mr-2" />
@@ -40,22 +174,30 @@ export const PositionsManagement = () => {
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Tambah Jabatan Baru</DialogTitle>
+                <DialogTitle>
+                  {editingPosition ? "Edit Jabatan" : "Tambah Jabatan Baru"}
+                </DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="name">Nama Jabatan</Label>
-                  <Input id="name" placeholder="Masukkan nama jabatan" />
-                </div>
-                <div>
-                  <Label htmlFor="code">Kode Jabatan</Label>
-                  <Input id="code" placeholder="Masukkan kode jabatan" />
+                  <Input 
+                    id="name" 
+                    placeholder="Masukkan nama jabatan"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  />
                 </div>
                 <div>
                   <Label htmlFor="description">Deskripsi</Label>
-                  <Textarea id="description" placeholder="Masukkan deskripsi jabatan" />
+                  <Textarea 
+                    id="description" 
+                    placeholder="Masukkan deskripsi jabatan"
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  />
                 </div>
-                <Button className="w-full" onClick={() => setIsAddDialogOpen(false)}>
+                <Button className="w-full" onClick={handleSubmit}>
                   Simpan
                 </Button>
               </div>
@@ -67,7 +209,6 @@ export const PositionsManagement = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Kode</TableHead>
               <TableHead>Nama Jabatan</TableHead>
               <TableHead>Deskripsi</TableHead>
               <TableHead>Jumlah Guru</TableHead>
@@ -75,26 +216,35 @@ export const PositionsManagement = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockPositions.map((position) => (
-              <TableRow key={position.id}>
-                <TableCell className="font-medium">{position.code}</TableCell>
-                <TableCell>{position.name}</TableCell>
-                <TableCell className="max-w-xs truncate">{position.description}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">{position.count} orang</Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex space-x-2">
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="destructive" size="sm">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center">Memuat data...</TableCell>
               </TableRow>
-            ))}
+            ) : positions.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center">Tidak ada data</TableCell>
+              </TableRow>
+            ) : (
+              positions.map((position) => (
+                <TableRow key={position.id}>
+                  <TableCell className="font-medium">{position.name}</TableCell>
+                  <TableCell className="max-w-xs truncate">{position.description}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{position.count} orang</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button variant="outline" size="sm" onClick={() => handleEdit(position)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(position.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </CardContent>

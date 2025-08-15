@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,57 +8,164 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash2, MapPin } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-const mockLocations = [
-  { 
-    id: 1, 
-    name: "Gedung A", 
-    address: "Jl. Pendidikan No. 123", 
-    latitude: -6.2088, 
-    longitude: 106.8456, 
-    radius: 50,
-    description: "Gedung utama untuk kelas 1-3"
-  },
-  { 
-    id: 2, 
-    name: "Gedung B", 
-    address: "Jl. Pendidikan No. 125", 
-    latitude: -6.2090, 
-    longitude: 106.8460, 
-    radius: 50,
-    description: "Gedung untuk kelas 4-6"
-  },
-  { 
-    id: 3, 
-    name: "Lapangan Olahraga", 
-    address: "Jl. Pendidikan No. 127", 
-    latitude: -6.2085, 
-    longitude: 106.8450, 
-    radius: 100,
-    description: "Area olahraga dan upacara"
-  },
-  { 
-    id: 4, 
-    name: "Perpustakaan", 
-    address: "Jl. Pendidikan No. 129", 
-    latitude: -6.2092, 
-    longitude: 106.8455, 
-    radius: 30,
-    description: "Ruang baca dan koleksi buku"
-  },
-  { 
-    id: 5, 
-    name: "Kantor Administrasi", 
-    address: "Jl. Pendidikan No. 121", 
-    latitude: -6.2087, 
-    longitude: 106.8458, 
-    radius: 40,
-    description: "Kantor tata usaha dan kepala sekolah"
-  },
-];
+interface Location {
+  id: string;
+  name: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  radius?: number;
+  description?: string;
+}
 
 export const LocationsManagement = () => {
+  const [locations, setLocations] = useState<Location[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingLocation, setEditingLocation] = useState<Location | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [formData, setFormData] = useState({
+    name: "",
+    address: "",
+    latitude: "",
+    longitude: "",
+    radius: "50",
+    description: ""
+  });
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchLocations();
+  }, []);
+
+  const fetchLocations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('locations')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setLocations(data || []);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal memuat data lokasi",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.name.trim()) {
+      toast({
+        title: "Error",
+        description: "Nama lokasi wajib diisi",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const locationData = {
+        name: formData.name,
+        address: formData.address || null,
+        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
+        radius: formData.radius ? parseInt(formData.radius) : 50,
+        description: formData.description || null
+      };
+
+      if (editingLocation) {
+        const { error } = await supabase
+          .from('locations')
+          .update(locationData)
+          .eq('id', editingLocation.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Berhasil",
+          description: "Lokasi berhasil diperbarui"
+        });
+      } else {
+        const { error } = await supabase
+          .from('locations')
+          .insert(locationData);
+
+        if (error) throw error;
+
+        toast({
+          title: "Berhasil",
+          description: "Lokasi berhasil ditambahkan"
+        });
+      }
+
+      resetForm();
+      fetchLocations();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal menyimpan data lokasi",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleEdit = (location: Location) => {
+    setEditingLocation(location);
+    setFormData({
+      name: location.name,
+      address: location.address || "",
+      latitude: location.latitude?.toString() || "",
+      longitude: location.longitude?.toString() || "",
+      radius: location.radius?.toString() || "50",
+      description: location.description || ""
+    });
+    setIsAddDialogOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Yakin ingin menghapus lokasi ini?")) return;
+
+    try {
+      const { error } = await supabase
+        .from('locations')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Berhasil",
+        description: "Lokasi berhasil dihapus"
+      });
+      fetchLocations();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal menghapus lokasi",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      address: "",
+      latitude: "",
+      longitude: "",
+      radius: "50",
+      description: ""
+    });
+    setEditingLocation(null);
+    setIsAddDialogOpen(false);
+  };
 
   return (
     <Card>
@@ -68,7 +175,10 @@ export const LocationsManagement = () => {
             <MapPin className="h-5 w-5 mr-2" />
             Data Lokasi
           </CardTitle>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+            if (!open) resetForm();
+            setIsAddDialogOpen(open);
+          }}>
             <DialogTrigger asChild>
               <Button size="sm">
                 <Plus className="h-4 w-4 mr-2" />
@@ -77,36 +187,73 @@ export const LocationsManagement = () => {
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Tambah Lokasi Baru</DialogTitle>
+                <DialogTitle>
+                  {editingLocation ? "Edit Lokasi" : "Tambah Lokasi Baru"}
+                </DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="name">Nama Lokasi</Label>
-                  <Input id="name" placeholder="Masukkan nama lokasi" />
+                  <Input 
+                    id="name" 
+                    placeholder="Masukkan nama lokasi"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  />
                 </div>
                 <div>
                   <Label htmlFor="address">Alamat</Label>
-                  <Input id="address" placeholder="Masukkan alamat lengkap" />
+                  <Input 
+                    id="address" 
+                    placeholder="Masukkan alamat lengkap"
+                    value={formData.address}
+                    onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <Label htmlFor="latitude">Latitude</Label>
-                    <Input id="latitude" type="number" step="0.000001" placeholder="-6.2088" />
+                    <Input 
+                      id="latitude" 
+                      type="number" 
+                      step="0.000001" 
+                      placeholder="-6.2088"
+                      value={formData.latitude}
+                      onChange={(e) => setFormData(prev => ({ ...prev, latitude: e.target.value }))}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="longitude">Longitude</Label>
-                    <Input id="longitude" type="number" step="0.000001" placeholder="106.8456" />
+                    <Input 
+                      id="longitude" 
+                      type="number" 
+                      step="0.000001" 
+                      placeholder="106.8456"
+                      value={formData.longitude}
+                      onChange={(e) => setFormData(prev => ({ ...prev, longitude: e.target.value }))}
+                    />
                   </div>
                 </div>
                 <div>
                   <Label htmlFor="radius">Radius (meter)</Label>
-                  <Input id="radius" type="number" placeholder="50" />
+                  <Input 
+                    id="radius" 
+                    type="number" 
+                    placeholder="50"
+                    value={formData.radius}
+                    onChange={(e) => setFormData(prev => ({ ...prev, radius: e.target.value }))}
+                  />
                 </div>
                 <div>
                   <Label htmlFor="description">Deskripsi</Label>
-                  <Textarea id="description" placeholder="Masukkan deskripsi lokasi" />
+                  <Textarea 
+                    id="description" 
+                    placeholder="Masukkan deskripsi lokasi"
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  />
                 </div>
-                <Button className="w-full" onClick={() => setIsAddDialogOpen(false)}>
+                <Button className="w-full" onClick={handleSubmit}>
                   Simpan
                 </Button>
               </div>
@@ -127,32 +274,46 @@ export const LocationsManagement = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockLocations.map((location) => (
-              <TableRow key={location.id}>
-                <TableCell className="font-medium">{location.name}</TableCell>
-                <TableCell className="max-w-xs truncate">{location.address}</TableCell>
-                <TableCell>
-                  <div className="text-sm">
-                    <div>Lat: {location.latitude}</div>
-                    <div>Lng: {location.longitude}</div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">{location.radius}m</Badge>
-                </TableCell>
-                <TableCell className="max-w-xs truncate">{location.description}</TableCell>
-                <TableCell>
-                  <div className="flex space-x-2">
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="destructive" size="sm">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center">Memuat data...</TableCell>
               </TableRow>
-            ))}
+            ) : locations.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center">Tidak ada data</TableCell>
+              </TableRow>
+            ) : (
+              locations.map((location) => (
+                <TableRow key={location.id}>
+                  <TableCell className="font-medium">{location.name}</TableCell>
+                  <TableCell className="max-w-xs truncate">{location.address}</TableCell>
+                  <TableCell>
+                    {location.latitude && location.longitude ? (
+                      <div className="text-sm">
+                        <div>Lat: {location.latitude}</div>
+                        <div>Lng: {location.longitude}</div>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{location.radius || 50}m</Badge>
+                  </TableCell>
+                  <TableCell className="max-w-xs truncate">{location.description}</TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button variant="outline" size="sm" onClick={() => handleEdit(location)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(location.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </CardContent>
